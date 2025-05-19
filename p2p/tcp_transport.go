@@ -8,10 +8,11 @@ import (
 
 // Remote node over a TCP established conn
 type TCPPeer struct {
+	// underlying conn of peer
 	conn net.Conn
 
-	// if connects to someone then true
-	// else if someone connects to it then false
+	// if we dial and retrieve a conn => outbound == true
+	// if we accept and retrieve a conn => outbound == false
 	outbound bool
 }
 
@@ -21,6 +22,13 @@ type TCPTransport struct {
 
 	mu    sync.RWMutex
 	peers map[net.Addr]Peer
+}
+
+func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
+	return &TCPPeer{
+		conn: conn,
+		outbound: outbound,
+	}
 }
 
 func NewTCPTransport(listenAddr string) *TCPTransport {
@@ -51,12 +59,13 @@ func (t *TCPTransport) startAcceptLoop() {
 			fmt.Printf("TCP accept error: %s\n", err)
 		}
 
-		go t.handleConn(&conn) // reference
+		go t.handleConn(conn)
 
 	}
 
 }
 
-func (T *TCPTransport) handleConn(conn *net.Conn) {
-	fmt.Printf("new incoming conn: %+v\n", conn)
+func (T *TCPTransport) handleConn(conn net.Conn) {
+	peer := NewTCPPeer(conn, true)
+	fmt.Printf("new incoming conn: %+v\n", peer)
 }
